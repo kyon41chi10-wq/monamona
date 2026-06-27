@@ -1,1 +1,190 @@
+<style>
+:root{
+  --void:#060b10;
+  --panel:rgba(10,20,28,0.82);
+  --panel-edge:rgba(242,177,52,0.35);
+  --amber:#f2b134;
+  --cyan:#5ad1c9;
+  --text:#eaf2f8;
+  --dim:#7e93a3;
+  --danger:#ff5d5d;
+  --success:#7fe0c2;
+  --mono: 'SF Mono', 'Consolas', 'Courier New', monospace;
+  --sans: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;width:100%;height:100%;background:var(--void);color:var(--text);font-family:var(--sans);overflow:hidden;user-select:none;}
+.hidden{display:none !important;}
 
+/* ---------- 汎用パネル(ブラケット枠) ---------- */
+.panel{
+  position:relative;
+  background:var(--panel);
+  border:1px solid var(--panel-edge);
+  border-radius:4px;
+  backdrop-filter:blur(6px);
+  padding:10px 12px;
+}
+.panel::before,.panel::after,.panel .bL,.panel .bR{
+  content:'';position:absolute;width:10px;height:10px;
+  border-color:var(--amber);pointer-events:none;
+}
+.panel::before{top:-1px;left:-1px;border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
+.panel::after{bottom:-1px;right:-1px;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
+
+/* ---------- メニュー画面 ---------- */
+#menu{
+  position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 30%, #0d1a24 0%, #060b10 70%);
+  z-index:50; gap:22px; padding:20px;
+}
+#menu h1{
+  font-size:clamp(22px,5vw,40px); letter-spacing:.08em; margin:0; text-align:center;
+  color:var(--text); text-shadow:0 0 18px rgba(242,177,52,0.35);
+  font-weight:800;
+}
+#menu .sub{color:var(--dim); font-size:13px; letter-spacing:.12em; margin-top:-14px; font-family:var(--mono);}
+#menu .menuCard{display:flex; flex-direction:column; gap:14px; width:min(360px,86vw);}
+#menu label{font-size:12px; color:var(--dim); letter-spacing:.08em; font-family:var(--mono);}
+select, button{
+  font-family:var(--sans); font-size:15px; color:var(--text);
+  background:rgba(20,32,42,0.9); border:1px solid var(--panel-edge); border-radius:4px;
+  padding:11px 14px; cursor:pointer;
+}
+select:focus, button:focus{outline:2px solid var(--cyan); outline-offset:1px;}
+.btnPrimary{background:linear-gradient(180deg, rgba(242,177,52,0.95), rgba(200,140,30,0.95)); color:#1a1208; font-weight:700; border:none; letter-spacing:.04em;}
+.btnPrimary:active{transform:translateY(1px);}
+.btnGhost{background:transparent; border:1px solid var(--panel-edge); color:var(--dim);}
+.btnGhost:disabled{opacity:.35; cursor:not-allowed;}
+
+/* ---------- HUD全体 ---------- */
+#hud{position:fixed; inset:0;}
+#stage{position:absolute; inset:0; overflow:hidden; background:#0b1620;}
+#mainCanvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair;}
+#mainCanvas.targeting{cursor:cell;}
+
+/* ---------- 左上ステータス ---------- */
+#topLeft{position:absolute; top:10px; left:10px; min-width:148px; font-family:var(--mono); font-size:12px; z-index:10;}
+#topLeft .row{display:flex; justify-content:space-between; gap:10px; padding:2px 0; color:var(--dim);}
+#topLeft .row b{color:var(--text); font-size:13px;}
+#topLeft h2{margin:0 0 6px; font-size:11px; letter-spacing:.1em; color:var(--amber); font-family:var(--sans); font-weight:700;}
+
+/* ---------- 順位パネル ---------- */
+#rankPanel{position:absolute; top:96px; left:10px; width:178px; font-size:11px; z-index:10;}
+#rankPanel h2{margin:0 0 6px; font-size:11px; letter-spacing:.1em; color:var(--amber); font-family:var(--sans); font-weight:700;}
+.rankRow{display:flex; align-items:center; gap:6px; padding:2px 0; font-family:var(--mono); color:var(--text);}
+.rankRow .dot{width:8px; height:8px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 4px currentColor;}
+.rankRow b{margin-left:auto;}
+
+/* ---------- ミニマップ ---------- */
+#minimapWrap{position:absolute; top:10px; right:10px; z-index:10;}
+#minimapCanvas{display:block; width:148px; height:148px; border-radius:3px;}
+
+/* ---------- イベント横断バナー ---------- */
+#eventBanner{
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  font-family:var(--mono); font-size:12px; padding:6px 14px; z-index:10;
+  color:var(--amber); text-align:center; white-space:nowrap;
+}
+
+/* ---------- イベントログ ---------- */
+#logPanel{position:absolute; left:10px; bottom:160px; width:240px; max-height:100px; overflow:hidden; z-index:10; font-size:11px;}
+#logPanel h2{margin:0 0 4px; font-size:11px; letter-spacing:.1em; color:var(--cyan); font-family:var(--sans); font-weight:700;}
+#eventLog{font-family:var(--mono); color:var(--dim); line-height:1.45; max-height:76px; overflow:hidden;}
+#eventLog div:first-child{color:var(--text);}
+
+/* ---------- 勢力選択画面 ---------- */
+#factionSelect{
+  position:fixed; inset:0; z-index:200;
+  background:rgba(6,11,16,0.97);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:28px; padding:20px;
+  font-family:var(--sans);
+}
+#factionSelect h1{
+  color:var(--amber); font-size:clamp(18px,5vw,28px); margin:0;
+  text-shadow:0 0 20px rgba(242,177,52,0.6);
+  letter-spacing:.12em;
+}
+#factionSelect .subtitle{ color:var(--dim); font-size:13px; margin:-16px 0 4px; }
+#factionCards{
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:14px; width:100%; max-width:420px;
+}
+.factionCard{
+  background:rgba(20,32,44,0.9);
+  border:2px solid rgba(255,255,255,0.1);
+  border-radius:12px; padding:18px 12px;
+  cursor:pointer; text-align:center;
+  transition:transform .15s, border-color .15s, box-shadow .15s;
+  position:relative; user-select:none;
+}
+.factionCard:active{ transform:scale(0.97); }
+.factionCard.selected{
+  transform:scale(1.06);
+  box-shadow:0 0 18px 4px var(--card-glow, rgba(255,255,255,0.4));
+  border-color:var(--card-color, #fff);
+}
+.factionCard .card-emblem{ font-size:clamp(28px,8vw,44px); line-height:1; }
+.factionCard .card-name  { font-size:15px; font-weight:700; margin-top:8px; color:var(--card-color,#fff); }
+.factionCard .card-label { font-size:11px; color:var(--dim); margin-top:2px; }
+.factionCard .card-badge {
+  display:none; position:absolute; top:6px; right:8px;
+  font-size:10px; font-weight:700; color:#fff;
+  background:var(--card-color,#888); border-radius:4px; padding:2px 5px;
+}
+.factionCard.selected .card-badge{ display:block; }
+
+#btnConfirmFaction{
+  padding:14px 36px; font-size:16px; font-weight:700;
+  background:var(--amber); color:#0a0e14; border:none; border-radius:8px;
+  cursor:pointer; width:100%; max-width:260px;
+  opacity:0.35; pointer-events:none;
+  transition:opacity .2s;
+}
+#btnConfirmFaction.ready{ opacity:1; pointer-events:auto; }
+#btnConfirmFaction.ready:active{ filter:brightness(1.15); }
+/* ---------- 折りたたみパネル ---------- */
+.panel-header{display:flex;justify-content:space-between;align-items:center;cursor:default;}
+.panel-header h2{margin:0;}
+.panel-toggle{background:none;border:none;color:var(--amber);font-size:11px;cursor:pointer;padding:0 0 0 8px;line-height:1;flex-shrink:0;opacity:0.7;}
+.panel-toggle:hover{opacity:1;}
+.panel-body{overflow:hidden;transition:max-height .25s ease,opacity .2s ease;opacity:1;}
+.panel-body.collapsed{max-height:0!important;opacity:0;pointer-events:none;}
+
+#bottomBar{position:absolute; left:10px; right:10px; bottom:10px; z-index:10; display:flex; flex-direction:column; gap:6px;}
+#selectedPanel{font-size:11px; font-family:var(--mono); color:var(--text); padding:7px 10px;}
+#orderRow{display:flex; gap:5px; overflow-x:auto; padding:2px; -webkit-overflow-scrolling:touch; flex-wrap:nowrap;}
+#orderRow button{
+  flex:0 0 auto; font-size:12px; padding:9px 12px; min-width:56px;
+  background:rgba(20,32,42,0.92); border:1px solid var(--panel-edge); color:var(--text);
+  border-radius:5px; font-weight:600;
+}
+#orderRow button:active{background:rgba(242,177,52,0.25);}
+#orderRow button.active{background:rgba(90,209,201,0.22); border-color:var(--cyan); color:var(--cyan);}
+#sysRow{display:flex; gap:6px; justify-content:flex-end;}
+#sysRow button{font-size:12px; padding:7px 11px; background:rgba(8,14,20,0.85); border:1px solid var(--panel-edge); color:var(--dim);}
+
+/* ---------- タップフィードバック ---------- */
+.tapFx{
+  position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px;
+  border:2px solid var(--cyan); border-radius:50%; pointer-events:none; z-index:30;
+  animation:tapFxAnim .35s ease-out forwards;
+}
+@keyframes tapFxAnim{ from{opacity:1; transform:scale(.3);} to{opacity:0; transform:scale(1.6);} }
+
+/* ---------- ゲームオーバー ---------- */
+#gameOverPanel{
+  position:fixed; inset:0; z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  background:rgba(4,8,12,0.86); backdrop-filter:blur(3px);
+}
+#gameOverTitle{font-size:clamp(28px,7vw,52px); font-weight:800; letter-spacing:.08em; margin:0;}
+
+/* ---------- スマホ向け調整 ---------- */
+@media (max-width:560px){
+  #rankPanel{display:none;}
+  #logPanel{width:54vw;}
+  #minimapCanvas{width:104px; height:104px;}
+  #topLeft{font-size:11px;}
+}
+</style>
